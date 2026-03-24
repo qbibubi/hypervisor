@@ -21,22 +21,14 @@ setup_config() {
     local config="$1"
     local config_name=$(basename "$config")
     
-    echo "Setting up $config_name..."
+    echo "[info]: Setting up $config_name..."
     
     sudo cp "$config" "$QEMU_DIR/hypervisor-dev.xml"
     sudo virsh undefine "$DOMAIN_NAME" 2>/dev/null || true
     sudo virsh define "$QEMU_DIR/hypervisor-dev.xml"
     sudo mkdir -p "$QEMU_DIR/nvram"
     
-    echo "Done. Run 'sudo virsh start $DOMAIN_NAME' to start the VM."
-}
-
-usage() {
-    echo "Usage: $0 [amd|intel|auto]"
-    echo "  amd   - Use AMD configuration (SVM)"
-    echo "  intel - Use Intel configuration (VMX + hv-evmcs)"
-    echo "  auto  - Auto-detect CPU type (default)"
-    exit 1
+    echo "[info]: Done. Run 'sudo virsh start $DOMAIN_NAME' to start the VM."
 }
 
 case "${1:-auto}" in
@@ -59,6 +51,4 @@ case "${1:-auto}" in
         fi
         ;;
     *)
-        usage
-        ;;
 esac
