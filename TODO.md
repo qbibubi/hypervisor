@@ -1,5 +1,6 @@
 # TODO 24-03-2026
 
+- [ ] Setup debugger VM with MSVC toolchain for compilation
 - [ ] Create automation script
     - [ ] Restarting and refreshing VM setups - applying snapshots
     - [ ] Opening two terminal windows and running `debuggee` and `debugger`
@@ -12,3 +13,4 @@
     - [ ] Are we gonna use a bootkit to load it?
     - [ ] How `Secure Boot` and `TPM` affect the place where the hypervisor is in memory
         - Seems like it has to be in memory as a driver or something like that
+
