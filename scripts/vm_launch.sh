@@ -1,0 +1,56 @@
+#!/bin/bash
+
+set -e
+
+VM_DEV="hypervisor-dev"
+VM_DBG="hypervisor-dbg"
+VNC_DEV_PORT=5900
+VNC_DBG_PORT=5901
+
+usage() {
+    echo "Launch VM display clients (uses virt-viewer, falls back to remmina)"
+    echo ""
+    echo "Usage: $0 [dev|dbg|all]"
+    echo ""
+    echo "  dev  - Connect to debuggee VM (port 5900)"
+    echo "  dbg  - Connect to debugger VM (port 5901)"
+    echo "  all  - Connect to both VMs (default)"
+    exit 1
+}
+
+launch_viewer() {
+    local name="$1"
+    local port="$2"
+
+    if command -v vncviewer &>/dev/null; then
+        echo "Launching vncviewer for $name on port $port..."
+        sudo -u qbibubi -i vncviewer "127.0.0.1:$port" &
+    elif command -v virt-viewer &>/dev/null; then
+        echo "Launching virt-viewer for $name..."
+        sudo -u qbibubi -i virt-viewer --domain-name "$name" &
+    elif command -v remmina &>/dev/null; then
+        echo "Launching remmina for $name on port $port..."
+        remmina -c "vnc://127.0.0.1:$port" &
+    else
+        echo "Error: No VNC viewer found (tried vncviewer, virt-viewer, remmina)"
+        exit 1
+    fi
+}
+
+case "${1:-all}" in
+    dev)
+        launch_viewer "$VM_DEV" "$VNC_DEV_PORT"
+        ;;
+    dbg)
+        launch_viewer "$VM_DBG" "$VNC_DBG_PORT"
+        ;;
+    all)
+        launch_viewer "$VM_DEV" "$VNC_DEV_PORT"
+        launch_viewer "$VM_DBG" "$VNC_DBG_PORT"
+        ;;
+    *)
+        usage
+        ;;
+esac
+
+echo "VM display clients launched."
