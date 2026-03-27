@@ -6,8 +6,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 QEMU_DIR="/etc/libvirt/qemu"
 DOMAIN_NAME="hypervisor-dev"
 
-AMD_CONFIG="$SCRIPT_DIR/hypervisor-amd-dev.xml"
-INTEL_CONFIG="$SCRIPT_DIR/hypervisor-intel-dev.xml"
+AMD_CONFIG="$SCRIPT_DIR/../linux/hypervisor-amd-dev.xml"
+INTEL_CONFIG="$SCRIPT_DIR/../linux/hypervisor-intel-dev.xml"
 
 check_amd() {
     grep -q '^flags.*\bsvm\b' /proc/cpuinfo 2>/dev/null && return 0 || return 1
