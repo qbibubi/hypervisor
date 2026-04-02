@@ -48,14 +48,13 @@ cmd_start() {
 
 cmd_stop() {
     local domain="$1"
-    
     print "[$domain]: Stopping..."
     sudo virsh destroy "$domain" 2>/dev/null || print_warning "[$domain]: Already stopped"
 }
 
 cmd_reboot() {
     local domain="$1"
-    print "[$domain] Restarting..." 
+    print "[$domain]: Restarting..." 
     sudo virsh reboot "$domain"
 }
 
@@ -121,7 +120,9 @@ case "${1:-}" in
                 cmd_stop "$VM_DEBUGGEE"
                 cmd_stop "$VM_DEBUGGER"
                 ;;
-            *) print "Usage: $0 all [start|stop]" ;;
+            *) 
+              print "USAGE"
+              print "           $0 all [start|stop]" ;;
         esac
         ;;
     *) usage ;;
