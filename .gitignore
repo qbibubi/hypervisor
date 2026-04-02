@@ -1,2 +1,4 @@
 .obsidian
 
+/driver/hypervisor/build
+/driver/hypervisor/.vs
