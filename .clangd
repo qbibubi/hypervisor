@@ -1,0 +1,22 @@
+CompileFlags:
+  Add:
+    # 1. Trick Clang into thinking it's the Microsoft compiler
+    - "--target=x86_64-pc-windows-msvc"
+    - "-fms-extensions"
+    - "-fms-compatibility"
+    - "-fdelayed-template-parsing"
+
+    # 2. Tell the WDK headers we are writing a 64-bit Kernel Driver
+    - "-D_AMD64_"
+    - "-D_WIN64"
+    - "-D_KERNEL_MODE"
+    - "-D_WIN32_WINNT=0x0A00" # Target Windows 10/11
+    
+    # 3. Disable annoying Clang warnings about Microsoft's specific C syntax
+    - "-Wno-everything" 
+
+    # 4. Include paths (CHANGE "qbibubi" TO YOUR ACTUAL LINUX USERNAME)
+    - "-I/home/qbibubi/dev/.win_headers/wdk/km"
+    - "-I/home/qbibubi/dev/.win_headers/wdk/shared"
+    - "-I/home/qbibubi/dev/.win_headers/wdk/ucrt"
+    - "-I/home/qbibubi/dev/.win_headers/msvc/include"
