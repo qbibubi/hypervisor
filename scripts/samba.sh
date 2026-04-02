@@ -39,12 +39,13 @@ cmd_setup() {
         sudo tee -a "$SAMBA_CONF" > /dev/null << 'EOF'
 
 [hypervisor]
-   path = /home/qbibubi/dev/hypervisor
-   public = no
-   writable = yes
-   valid users = qbibubi
-   read only = no
-   guest ok = no
+    path = /home/qbibubi/dev/hypervisor
+    read only = no
+    writable = yes
+    guest ok = yes
+    public = no
+    valid users = qbibubi
+    force user = qbibubi
 EOF
     fi
     

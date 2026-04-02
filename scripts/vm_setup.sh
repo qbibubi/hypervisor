@@ -4,7 +4,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 QEMU_DIR="/etc/libvirt/qemu"
-DOMAIN_NAME="hypervisor-dev"
+DOMAIN="hypervisor-dev"
 
 AMD_CONFIG="$SCRIPT_DIR/../linux/hypervisor-amd-dev.xml"
 INTEL_CONFIG="$SCRIPT_DIR/../linux/hypervisor-intel-dev.xml"
@@ -21,14 +21,14 @@ setup_config() {
     local config="$1"
     local config_name=$(basename "$config")
     
-    echo "[info]: Setting up $config_name..."
+    echo "[$DOMAIN]: Setting up $config_name..."
     
     sudo cp "$config" "$QEMU_DIR/hypervisor-dev.xml"
-    sudo virsh undefine "$DOMAIN_NAME" 2>/dev/null || true
+    sudo virsh undefine "$DOMAIN" 2>/dev/null || true
     sudo virsh define "$QEMU_DIR/hypervisor-dev.xml"
     sudo mkdir -p "$QEMU_DIR/nvram"
     
-    echo "[info]: Done. Run 'sudo virsh start $DOMAIN_NAME' to start the VM."
+    echo "[$DOMAIN]: Success - run 'sudo virsh start $DOMAIN' to start the VM."
 }
 
 case "${1:-auto}" in
@@ -40,13 +40,13 @@ case "${1:-auto}" in
         ;;
     auto)
         if check_intel; then
-            echo "Detected Intel CPU"
+            echo "[$DOMAIN]: Intel CPU detected"
             setup_config "$INTEL_CONFIG"
         elif check_amd; then
-            echo "Detected AMD CPU"
+            echo "[$DOMAIN]: AMD CPU detected"
             setup_config "$AMD_CONFIG"
         else
-            echo "Error: Could not detect CPU type" >&2
+            echo "[$DOMAIN]: Could not detect CPU type" >&2
             exit 1
         fi
         ;;

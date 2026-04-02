@@ -31,10 +31,10 @@ configure_vm() {
     local config="$1"
     local config_name=$(basename "$config")
     
-    echo "Configuring VM with: $config_name"
+    echo "[$DOMAIN_NAME] Configuring VM with: $config_name"
     
     if ! sudo virsh list --all | grep -q "$DOMAIN_NAME"; then
-        echo "VM does not exist. Run vm_setup.sh first."
+        echo "[ERROR]: VM does not exist. Run vm_setup.sh first."
         exit 1
     fi
     
@@ -43,7 +43,7 @@ configure_vm() {
     sudo virsh define "$QEMU_DIR/$DOMAIN_NAME.xml"
     sudo mkdir -p "$QEMU_DIR/nvram"
     
-    echo "VM configured. Run 'vm_run.sh start' to start."
+    echo "[$DOMAIN_NAME] VM configured - run 'vm_run.sh start' to start."
 }
 
 case "${1:-auto}" in
@@ -55,13 +55,13 @@ case "${1:-auto}" in
         ;;
     auto)
         if check_intel; then
-            echo "Detected Intel CPU"
+            echo "[INFO]: Detected Intel CPU"
             configure_vm "$INTEL_CONFIG"
         elif check_amd; then
-            echo "Detected AMD CPU"
+            echo "[INFO]: Detected AMD CPU"
             configure_vm "$AMD_CONFIG"
         else
-            echo "Error: Could not detect CPU type" >&2
+            echo "[ERROR]: Could not detect CPU type" >&2
             exit 1
         fi
         ;;

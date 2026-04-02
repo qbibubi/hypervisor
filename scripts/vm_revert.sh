@@ -1,4 +1,4 @@
-#!/bin/bash
+# !/bin/bash
 
 set -e
 
@@ -24,6 +24,6 @@ fi
 
 SNAPSHOT_NAME="$1"
 
-echo "Reverting $DOMAIN_NAME to snapshot '$SNAPSHOT_NAME'..."
+echo "[$DOMAIN_NAME] Reverting to snapshot '$SNAPSHOT_NAME'..."
 sudo virsh snapshot-revert "$DOMAIN_NAME" "$SNAPSHOT_NAME"
-echo "Done. VM reverted to snapshot '$SNAPSHOT_NAME'."
+echo "[$DOMAIN_NAME] Reverted to snapshot '$SNAPSHOT_NAME' successfuly"

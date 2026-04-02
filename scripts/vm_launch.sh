@@ -23,16 +23,16 @@ launch_viewer() {
     local port="$2"
 
     if command -v vncviewer &>/dev/null; then
-        echo "Launching vncviewer for $name on port $port..."
+        echo "[$name]: Launching vncviewer on port $port..."
         sudo -u qbibubi -i vncviewer "127.0.0.1:$port" &
     elif command -v virt-viewer &>/dev/null; then
-        echo "Launching virt-viewer for $name..."
+        echo "[$name]: Launching virt-viewer..."
         sudo -u qbibubi -i virt-viewer --domain-name "$name" &
     elif command -v remmina &>/dev/null; then
-        echo "Launching remmina for $name on port $port..."
+        echo "[$name]: Launching remmina on port $port..."
         remmina -c "vnc://127.0.0.1:$port" &
     else
-        echo "Error: No VNC viewer found (tried vncviewer, virt-viewer, remmina)"
+        echo "[error]: No VNC viewer found (tried vncviewer, virt-viewer, remmina)"
         exit 1
     fi
 }

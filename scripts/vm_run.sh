@@ -39,20 +39,21 @@ run_cmd() {
 
 cmd_start() {
     local domain="$1"
-    echo "Starting VM: $domain"
+    echo "[$domain]: Starting..."
     sudo virsh start "$domain"
-    echo "VM started."
+    echo "[$domain]: Success"
 }
 
 cmd_stop() {
     local domain="$1"
-    echo "Stopping VM: $domain"
-    sudo virsh destroy "$domain" 2>/dev/null || echo "VM already stopped."
+    
+    echo "[$domain]: Stopping..."
+    sudo virsh destroy "$domain" 2>/dev/null || echo "[$domain]: Already stopped"
 }
 
 cmd_reboot() {
     local domain="$1"
-    echo "Rebooting VM: $domain"
+    echo "[$domain] Restarting..." 
     sudo virsh reboot "$domain"
 }
 
