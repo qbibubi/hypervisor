@@ -8,23 +8,19 @@ source "${SCRIPT_DIR}/logs.sh"
 usage() {
     print "Hypervisor Development VM Manager"
     print ""
-    print "Usage: $0 <command> [args...]"
+    print "USAGE"
+    print "           $0 <command> [args...]"
     print ""
-    print "Commands:"
-    print "  setup [auto|amd|intel]  - Setup VM with CPU-specific config"
-    print "  configure [auto|amd|intel] - Reconfigure existing VM"
-    print "  run [start|stop|reboot|console|vnc|status] - VM lifecycle"
-    print "  display [dev|dbg|all] - Launch VNC viewer for VMs (uses virt-viewer)"
-    print "  snapshot create <name>  - Create snapshot (debuggee only)"
-    print "  snapshot list           - List snapshots"
-    print "  snapshot delete <name> - Delete snapshot"
-    print "  snapshot revert <name> - Revert to snapshot"
-    print "  revert <name>           - Revert debuggee to snapshot (shorthand)"
-    print ""
-
-    print "Individual scripts available in scripts/:"
-    ls -1 "$SCRIPT_DIR"/*.sh 2>/dev/null | xargs -I{} basename {} | sort
-
+    print "COMMANDS"
+    print " - setup [auto|amd|intel]                        Setup VM with CPU-specific config"
+    print " - configure [auto|amd|intel]                    Reconfigure existing VM"
+    print " - run [start|stop|reboot|console|vnc|status]    VM lifecycle"
+    print " - display [dev|dbg|all]                         Launch VNC viewer for VMs (uses virt-viewer)"
+    print " - snapshot create <name>                        Create snapshot (debuggee only)"
+    print " - snapshot list                                 List snapshots"
+    print " - snapshot delete <name>                        Delete snapshot"
+    print " - snapshot revert <name>                        Revert to snapshot"
+    print " - revert <name>                                 Revert debuggee to snapshot (shorthand)"
     exit 1
 }
 
