@@ -3,26 +3,28 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/logs.sh"
 
 usage() {
-    echo "Hypervisor Development VM Manager"
-    echo ""
-    echo "Usage: $0 <command> [args...]"
-    echo ""
-    echo "Commands:"
-    echo "  setup [auto|amd|intel]  - Setup VM with CPU-specific config"
-    echo "  configure [auto|amd|intel] - Reconfigure existing VM"
-    echo "  run [start|stop|reboot|console|vnc|status] - VM lifecycle"
-    echo "  display [dev|dbg|all] - Launch VNC viewer for VMs (uses virt-viewer)"
-    echo "  snapshot create <name>  - Create snapshot (debuggee only)"
-    echo "  snapshot list           - List snapshots"
-    echo "  snapshot delete <name> - Delete snapshot"
-    echo "  snapshot revert <name> - Revert to snapshot"
-    echo "  revert <name>           - Revert debuggee to snapshot (shorthand)"
-    echo "  virtiofsd [start|stop|status|check] - virtiofs daemon"
-    echo ""
-    echo "Individual scripts available in scripts/:"
+    print "Hypervisor Development VM Manager"
+    print ""
+    print "Usage: $0 <command> [args...]"
+    print ""
+    print "Commands:"
+    print "  setup [auto|amd|intel]  - Setup VM with CPU-specific config"
+    print "  configure [auto|amd|intel] - Reconfigure existing VM"
+    print "  run [start|stop|reboot|console|vnc|status] - VM lifecycle"
+    print "  display [dev|dbg|all] - Launch VNC viewer for VMs (uses virt-viewer)"
+    print "  snapshot create <name>  - Create snapshot (debuggee only)"
+    print "  snapshot list           - List snapshots"
+    print "  snapshot delete <name> - Delete snapshot"
+    print "  snapshot revert <name> - Revert to snapshot"
+    print "  revert <name>           - Revert debuggee to snapshot (shorthand)"
+    print ""
+
+    print "Individual scripts available in scripts/:"
     ls -1 "$SCRIPT_DIR"/*.sh 2>/dev/null | xargs -I{} basename {} | sort
+
     exit 1
 }
 
@@ -50,10 +52,6 @@ case "${1:-}" in
     revert)
         shift
         "$SCRIPT_DIR/vm_revert.sh" "$@"
-        ;;
-    virtiofsd)
-        shift
-        "$SCRIPT_DIR/virtiofsd.sh" "$@"
         ;;
     *)
         usage

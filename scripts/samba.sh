@@ -3,41 +3,44 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/logs.sh"
+
 SHARE_DIR="/home/qbibubi/dev/hypervisor"
 SAMBA_CONF="/etc/samba/smb.conf"
 SAMBA_USER="qbibubi"
 
 usage() {
-    echo "Usage: $0 <command>"
-    echo ""
-    echo "Commands:"
-    echo "  setup   - Setup Samba share for hypervisor directory"
-    echo "  start   - Start Samba service"
-    echo "  stop    - Stop Samba service"
-    echo "  status  - Check Samba status"
-    echo "  restart - Restart Samba service"
+    print "USAGE"
+    print "           $0 <command>"
+    print ""
+    print "COMMANDS"
+    print "  - setup        Setup Samba share for hypervisor directory"
+    print "  - start        Start Samba service"
+    print "  - stop         Stop Samba service"
+    print "  - status       Check Samba status"
+    print "  - restart      Restart Samba service"
     exit 1
 }
 
 cmd_setup() {
-    echo "Setting up Samba share..."
+    print "[Samba]: Setting up share..."
     
     if ! command -v smbd &>/dev/null; then
-        echo "Installing Samba..."
+        print_warning "[Samba]: Installing"
         sudo pacman -S samba
     fi
     
-    echo "Creating share directory..."
+    print "[Samba]: Creating share directory..."
     sudo mkdir -p /var/lib/samba/usershare
     sudo chmod 1777 /var/lib/samba/usershare
     
-    echo "Adding Samba user..."
+    print "[Samba]: Adding user..."
     sudo pdbedit -L 2>/dev/null | grep -q "$SAMBA_USER" || sudo smbpasswd -a "$SAMBA_USER"
     
-    echo "Creating Samba config..."
+    print "[Samba]: Creating config..."
+
     if ! grep -q "\[hypervisor\]" "$SAMBA_CONF" 2>/dev/null; then
         sudo tee -a "$SAMBA_CONF" > /dev/null << 'EOF'
-
 [hypervisor]
     path = /home/qbibubi/dev/hypervisor
     read only = no
@@ -45,24 +48,24 @@ cmd_setup() {
     guest ok = yes
     public = no
     valid users = qbibubi
-    force user = qbibubi
+    force user = qbibubi 
 EOF
     fi
     
-    echo "Samba share configured. Run '$0 start' to start the service."
+    print_success "[Samba]: Share configured - run '$0 start' to start the service"
 }
 
 cmd_start() {
-    echo "Starting Samba..."
+    print "[Samba]: Starting..."
     sudo systemctl start smb nmb
     sudo systemctl enable smb nmb
-    echo "Samba started."
+    print_success "[Samba]: started"
 }
 
 cmd_stop() {
-    echo "Stopping Samba..."
+    print "[Samba]: Stopping..."
     sudo systemctl stop smb nmb
-    echo "Samba stopped."
+    print_success "[Samba]: Stopped"
 }
 
 cmd_status() {

@@ -3,32 +3,34 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/logs.sh"
 
 VM_DEBUGGEE="hypervisor-dev"
 VM_DEBUGGER="hypervisor-dbg"
 
 usage() {
-    echo "Usage: $0 <vm> <command>"
-    echo ""
-    echo "VMs:"
-    echo "  dev   - Debuggee VM (hypervisor-dev)"
-    echo "  dbg   - Debugger VM (hypervisor-dbg)"
-    echo "  all   - Both VMs (start/stop only)"
-    echo ""
-    echo "Commands:"
-    echo "  start    - Start the VM"
-    echo "  stop     - Stop (destroy) the VM"
-    echo "  reboot   - Reboot the VM"
-    echo "  console  - Connect to serial console"
-    echo "  vnc      - Launch VNC viewer"
-    echo "  status   - Show VM status"
+    print "USAGE"
+    print "           $0 <vm> <command>"
+    print ""
+    print "VIRTUAL MACHINES"
+    print " - dev      Debuggee VM (hypervisor-dev)"
+    print " - dbg      Debugger VM (hypervisor-dbg)"
+    print " - all      Both VMs (start/stop only)"
+    print ""
+    print "COMMANDS"
+    print " - start      Start the VM"
+    print " - stop       Stop (destroy) the VM"
+    print " - reboot     Reboot the VM"
+    print " - console    Connect to serial console"
+    print " - vnc        Launch VNC viewer"
+    print " - status     Show VM status"
     exit 1
 }
 
 get_vnc_port() {
     local domain="$1"
     local port=$(sudo virsh domdisplay "$domain" 2>/dev/null | grep -oP ':\d+$' | tr -d ':')
-    echo "${port:-5900}"
+    print "${port:-5900}"
 }
 
 run_cmd() {
@@ -39,21 +41,21 @@ run_cmd() {
 
 cmd_start() {
     local domain="$1"
-    echo "[$domain]: Starting..."
+    print "[$domain]: Starting..."
     sudo virsh start "$domain"
-    echo "[$domain]: Success"
+    print_success "[$domain]: Success"
 }
 
 cmd_stop() {
     local domain="$1"
     
-    echo "[$domain]: Stopping..."
-    sudo virsh destroy "$domain" 2>/dev/null || echo "[$domain]: Already stopped"
+    print "[$domain]: Stopping..."
+    sudo virsh destroy "$domain" 2>/dev/null || print_warning "[$domain]: Already stopped"
 }
 
 cmd_reboot() {
     local domain="$1"
-    echo "[$domain] Restarting..." 
+    print "[$domain] Restarting..." 
     sudo virsh reboot "$domain"
 }
 
@@ -65,6 +67,7 @@ cmd_console() {
 cmd_vnc() {
     local domain="$1"
     local port=$(get_vnc_port "$domain")
+
     if command -v virt-viewer &>/dev/null; then
         virt-viewer --domain-name "$domain"
     elif command -v remmina &>/dev/null; then
@@ -74,13 +77,13 @@ cmd_vnc() {
     elif command -v gnome-remote-desktop &>/dev/null; then
         sudo gnome-remote-desktop -v "127.0.0.1:$port"
     else
-        echo "No VNC viewer found. Connect to 127.0.0.1:$port"
+        print_error "[$domain]: No VNC viewer found. Connect to 127.0.0.1:$port"
     fi
 }
 
 cmd_status() {
     local domain="$1"
-    sudo virsh dominfo "$domain" 2>/dev/null || echo "VM '$domain' does not exist."
+    sudo virsh dominfo "$domain" 2>/dev/null || print "VM '$domain' does not exist"
 }
 
 case "${1:-}" in
@@ -118,7 +121,7 @@ case "${1:-}" in
                 cmd_stop "$VM_DEBUGGEE"
                 cmd_stop "$VM_DEBUGGER"
                 ;;
-            *) echo "Usage: $0 all [start|stop]" ;;
+            *) print "Usage: $0 all [start|stop]" ;;
         esac
         ;;
     *) usage ;;

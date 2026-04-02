@@ -3,6 +3,8 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/logs.sh"
+
 QEMU_DIR="/etc/libvirt/qemu"
 DOMAIN="hypervisor-dev"
 
@@ -21,14 +23,14 @@ setup_config() {
     local config="$1"
     local config_name=$(basename "$config")
     
-    echo "[$DOMAIN]: Setting up $config_name..."
+    print "[$DOMAIN]: Setting up $config_name..."
     
     sudo cp "$config" "$QEMU_DIR/hypervisor-dev.xml"
     sudo virsh undefine "$DOMAIN" 2>/dev/null || true
     sudo virsh define "$QEMU_DIR/hypervisor-dev.xml"
     sudo mkdir -p "$QEMU_DIR/nvram"
     
-    echo "[$DOMAIN]: Success - run 'sudo virsh start $DOMAIN' to start the VM."
+    print_success "[$DOMAIN]: Success - run 'sudo virsh start $DOMAIN' to start the VM."
 }
 
 case "${1:-auto}" in
@@ -40,13 +42,13 @@ case "${1:-auto}" in
         ;;
     auto)
         if check_intel; then
-            echo "[$DOMAIN]: Intel CPU detected"
+            print_success "[$DOMAIN]: Intel CPU detected"
             setup_config "$INTEL_CONFIG"
         elif check_amd; then
-            echo "[$DOMAIN]: AMD CPU detected"
+            print_success "[$DOMAIN]: AMD CPU detected"
             setup_config "$AMD_CONFIG"
         else
-            echo "[$DOMAIN]: Could not detect CPU type" >&2
+            print_error "[$DOMAIN]: Could not detect CPU type" >&2
             exit 1
         fi
         ;;
