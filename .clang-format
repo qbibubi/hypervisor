@@ -1,5 +1,5 @@
 ---
-AccessModifierOffset: "-2"
+AccessModifierOffset: "-4"
 AlignAfterOpenBracket: BlockIndent
 AlignArrayOfStructures: Left
 AlignConsecutiveAssignments:
@@ -103,7 +103,7 @@ IndentCaseLabels: "false"
 IndentExternBlock: AfterExternBlock
 IndentPPDirectives: AfterHash
 IndentRequiresClause: "false"
-IndentWidth: "4"
+IndentWidth: "2"
 IndentWrappedFunctionNames: "false"
 InsertBraces: "true"
 InsertNewlineAtEOF: "true"

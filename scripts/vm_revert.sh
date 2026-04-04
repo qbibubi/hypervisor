@@ -8,10 +8,10 @@ source "${SCRIPT_DIR}/logs.sh"
 DOMAIN="hypervisor-dev"
 
 usage() {
+  print "Revert the debuggee VM (hypervisor-dev) to a snapshot."
+  print ""
   print "USAGE"
   print "           $0 <snapshot-name>"
-  print ""
-  print "Revert the debuggee VM (hypervisor-dev) to a snapshot."
   print ""
   print "EXAMPLES"
   print "  - $0 win-installed    # Revert to 'win-installed' snapshot"

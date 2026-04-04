@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 set -euo pipefail
@@ -6,132 +5,257 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/logs.sh"
 
-DOMAIN="hypervisor-dev"
-DISK_TARGET="vda"
+SNAPSHOT_DIR="/var/lib/libvirt/images/snapshots"
 
 usage() {
-    print "USAGE"
-    print "           $0 <command> [snapshot-name]"
-    print ""
-    print "COMMANDS"
-    print "  create [name]   Create external snapshot"
-    print "  list            List snapshots"
-    print "  delete <name>   Delete snapshot (safe)"
-    print "  revert <name>   Revert to snapshot"
-    exit 1
+  print "VM Snapshot Manager - Creates independent (non-chained) snapshots"
+  print ""
+  print "USAGE"
+  print "           $0 <vm> <command> [args...]"
+  print ""
+  print "VIRTUAL MACHINES"
+  print "  dev        Debuggee VM (hypervisor-dev)"
+  print "  dbg        Debugger VM (hypervisor-dbg)"
+  print ""
+  print "COMMANDS"
+  print "  create [name]              Create standalone snapshot"
+  print "  list                      List available snapshots"
+  print "  delete <name>             Delete snapshot (checks if active first)"
+  print "  revert <name>             Revert VM to snapshot (stops VM first)"
+  print "  status                    Show current disk and snapshot status"
+  print ""
+  print "EXAMPLES"
+  print "  $0 dev create post-setup      # Create snapshot named 'post-setup'"
+  print "  $0 dev revert post-setup      # Revert to 'post-setup' snapshot"
+  print "  $0 dev delete old-snap       # Delete 'old-snap' snapshot"
+  exit 1
+}
+
+get_vm_name() {
+  local vm="$1"
+  case "$vm" in
+    dev) echo "hypervisor-dev" ;;
+    dbg) echo "hypervisor-dbg" ;;
+    *) print_error "Unknown VM: $vm" && exit 1 ;;
+  esac
+}
+
+get_disk_target() {
+  local vm="$1"
+  case "$vm" in
+    dev) echo "vda" ;;
+    dbg) echo "vda" ;;
+  esac
 }
 
 get_current_disk() {
-    sudo virsh domblklist "$DOMAIN" \
-        | awk -v target="$DISK_TARGET" '$1 == target {print $2}'
+  local domain="$1"
+  local target="$2"
+  sudo virsh domblklist "$domain" 2>/dev/null \
+    | awk -v t="$target" '$1 == t {print $2}'
+}
+
+get_current_disk_file() {
+  local domain="$1"
+  local target="$2"
+  get_current_disk "$domain" "$target"
 }
 
 cmd_create() {
-    local name="${1:-snap-$(date +%Y%m%d-%H%M%S)}"
-    local current_disk
-    current_disk="$(get_current_disk)"
-
-    if [[ -z "$current_disk" ]]; then
-        print_error "[$DOMAIN]: Could not determine current disk"
-        exit 1
-    fi
-
-    local snapshot_path="${current_disk%.qcow2}-${name}.qcow2"
-
-    print "[$DOMAIN]: Current disk: $current_disk"
-    print "[$DOMAIN]: Creating snapshot '$name'..."
-
-    if [[ -f "$snapshot_path" ]]; then
-        print_error "[$DOMAIN]: File already exists: $snapshot_path"
-        exit 1
-    fi
-
-    sudo virsh snapshot-create-as "$DOMAIN" "$name" \
-        --diskspec ${DISK_TARGET},snapshot=external,file="$snapshot_path" \
-        --disk-only --atomic
-
-    # Verify switch
-    local new_disk
-    new_disk="$(get_current_disk)"
-
-    if [[ "$new_disk" != "$snapshot_path" ]]; then
-        print_error "[$DOMAIN]: Snapshot created but disk did not switch!"
-        exit 1
-    fi
-
-    print_success "[$DOMAIN]: Snapshot created and active"
+  local vm="$1"
+  local name="${2:-snap-$(date +%Y%m%d-%H%M%S)}"
+  
+  local domain
+  domain="$(get_vm_name "$vm")"
+  local target
+  target="$(get_disk_target "$vm")"
+  
+  local current_disk
+  current_disk="$(get_current_disk "$domain" "$target")"
+  
+  if [[ -z "$current_disk" ]]; then
+    print_error "[$domain] Could not determine current disk"
+    exit 1
+  fi
+  
+  sudo mkdir -p "$SNAPSHOT_DIR"
+  
+  local snapshot_file="${SNAPSHOT_DIR}/${vm}-${name}.qcow2"
+  
+  if [[ -f "$snapshot_file" ]]; then
+    print_error "[$domain] Snapshot file already exists: $snapshot_file"
+    exit 1
+  fi
+  
+  print "[$domain] Current disk: $current_disk"
+  print "[$domain] Creating standalone snapshot '$name'..."
+  print "[$domain] This may take a moment..."
+  
+  sudo mkdir -p "$SNAPSHOT_DIR"
+  
+  local snapshot_file="${SNAPSHOT_DIR}/${vm}-${name}.qcow2"
+  
+  if [[ -f "$snapshot_file" ]]; then
+    print_error "[$domain] Snapshot file already exists: $snapshot_file"
+    exit 1
+  fi
+  
+  sudo qemu-img convert -O qcow2 -o compat=1.1,lazy_refcounts=off "$current_disk" "$snapshot_file"
+  
+  print_success "[$domain] Snapshot created: $snapshot_file"
+  print "[$domain] To revert to this snapshot, run: $0 $vm revert $name"
 }
 
 cmd_list() {
-    print "[$DOMAIN]: Snapshots:"
-    sudo virsh snapshot-list "$DOMAIN" || true
-
-    print ""
-    print "[$DOMAIN]: Current disk chain:"
-    get_current_disk
+  local vm="$1"
+  local domain
+  domain="$(get_vm_name "$vm")"
+  
+  print "[$domain] Standalone snapshots in $SNAPSHOT_DIR:"
+  if [[ -d "$SNAPSHOT_DIR" ]]; then
+    ls -lh "$SNAPSHOT_DIR/${vm}"-*.qcow2 2>/dev/null \
+      | awk '{print $9, $5}' \
+      | while read -r file size; do
+        local name
+        name="$(basename "$file" | sed "s/${vm}-//" | sed 's/\.qcow2$//')"
+        print "  $name ($(echo "$size" | sed 's/^/ /'))"
+      done
+    if ! ls "$SNAPSHOT_DIR/${vm}"-*.qcow2 &>/dev/null; then
+      print "  (none)"
+    fi
+  else
+    print "  (none)"
+  fi
+  
+  echo ""
+  local target
+  target="$(get_disk_target "$vm")"
+  print "[$domain] Current disk:"
+  get_current_disk "$domain" "$target" | sed 's/^/  /'
 }
 
 cmd_delete() {
-    local name="$1"
-
-    if [[ -z "$name" ]]; then
-        print_error "[$DOMAIN]: Snapshot name required"
-        exit 1
-    fi
-
-    print "[$DOMAIN]: Deleting snapshot '$name'..."
-
-    # Get snapshot disk file
-    local snapshot_xml
-    snapshot_xml=$(sudo virsh snapshot-dumpxml "$DOMAIN" "$name" 2>/dev/null || true)
-
-    if [[ -z "$snapshot_xml" ]]; then
-        print_error "[$DOMAIN]: Snapshot not found"
-        exit 1
-    fi
-
-    local disk_file
-    disk_file=$(echo "$snapshot_xml" | grep -oP 'file=\x27\K[^\x27]+' || true)
-
-    # SAFETY: ensure it's not the active disk
-    local current_disk
-    current_disk="$(get_current_disk)"
-
-    if [[ "$disk_file" == "$current_disk" ]]; then
-        print_error "[$DOMAIN]: Cannot delete active snapshot!"
-        exit 1
-    fi
-
-    sudo virsh snapshot-delete "$DOMAIN" "$name"
-
-    # Remove file if still present
-    if [[ -n "$disk_file" && -f "$disk_file" ]]; then
-        print "[$DOMAIN]: Removing disk file: $disk_file"
-        rm -f "$disk_file"
-    fi
-
-    print_success "[$DOMAIN]: Snapshot deleted"
+  local vm="$1"
+  local name="$2"
+  
+  if [[ -z "$name" ]]; then
+    print_error "Snapshot name required"
+    exit 1
+  fi
+  
+  local domain
+  domain="$(get_vm_name "$vm")"
+  
+  local snapshot_file="${SNAPSHOT_DIR}/${vm}-${name}.qcow2"
+  
+  if [[ ! -f "$snapshot_file" ]]; then
+    print_error "[$domain] Snapshot file not found: $snapshot_file"
+    exit 1
+  fi
+  
+  local target
+  target="$(get_disk_target "$vm")"
+  local current_disk
+  current_disk="$(get_current_disk "$domain" "$target")"
+  
+  if [[ "$current_disk" == "$snapshot_file" ]]; then
+    print_error "[$domain] Cannot delete active snapshot! Revert to another disk first."
+    exit 1
+  fi
+  
+  print "[$domain] Deleting snapshot '$name'..."
+  sudo rm -f "$snapshot_file"
+  print_success "[$domain] Snapshot deleted"
 }
 
 cmd_revert() {
-    local name="$1"
-
-    if [[ -z "$name" ]]; then
-        print_error "[$DOMAIN]: Snapshot name required"
-        exit 1
-    fi
-
-    print "[$DOMAIN]: Reverting to '$name'..."
-
-    sudo virsh snapshot-revert "$DOMAIN" "$name" --running
-
-    print_success "[$DOMAIN]: Reverted"
+  local vm="$1"
+  local name="$2"
+  
+  if [[ -z "$name" ]]; then
+    print_error "Snapshot name required"
+    exit 1
+  fi
+  
+  local domain
+  domain="$(get_vm_name "$vm")"
+  local target
+  target="$(get_disk_target "$vm")"
+  
+  local snapshot_file="${SNAPSHOT_DIR}/${vm}-${name}.qcow2"
+  
+  if [[ ! -f "$snapshot_file" ]]; then
+    print_error "[$domain] Snapshot not found: $snapshot_file"
+    print "[$domain] Available snapshots:"
+    ls -1 "${SNAPSHOT_DIR}/${vm}"-*.qcow2 2>/dev/null | sed "s|${SNAPSHOT_DIR}/${vm}-||g" | sed 's/.qcow2$//' | sed 's/^/  - /g' || print "  (none)"
+    exit 1
+  fi
+  
+  local current_state
+  current_state="$(sudo virsh domstate "$domain" 2>/dev/null || echo "not found")"
+  
+  if [[ "$current_state" == "running" ]]; then
+    print "[$domain] Stopping VM..."
+    sudo virsh destroy "$domain" 2>/dev/null || true
+  fi
+  
+  print "[$domain] Reverting to snapshot '$name'..."
+  
+  local disk_path
+  disk_path="$(sudo virsh domblklist "$domain" 2>/dev/null | grep -E "^${target}" | awk '{print $2}')"
+  
+  print "[$domain] Current disk: $disk_path"
+  print "[$domain] New disk: $snapshot_file"
+  
+  sudo virsh detach-disk "$domain" "$target" --persistent 2>/dev/null || true
+  
+  sudo virsh attach-disk "$domain" "$snapshot_file" "$target" --persistent --driver qcow2 --cache writeback
+  
+  print_success "[$domain] Reverted to snapshot '$name'"
+  print "[$domain] Start VM with: vm_run.sh $vm start"
 }
 
-case "${1:-}" in
-    create) cmd_create "${2:-}" ;;
-    list) cmd_list ;;
-    delete) cmd_delete "${2:-}" ;;
-    revert) cmd_revert "${2:-}" ;;
-    *) usage ;;
+cmd_status() {
+  local vm="$1"
+  local domain
+  domain="$(get_vm_name "$vm")"
+  local target
+  target="$(get_disk_target "$vm")"
+  
+  local state
+  state="$(sudo virsh domstate "$domain" 2>/dev/null || echo "not found")"
+  
+  print "[$domain] State: $state"
+  
+  local current_disk
+  current_disk="$(get_current_disk "$domain" "$target" 2>/dev/null || echo "none")"
+  print "[$domain] Current disk: $current_disk"
+  
+  if [[ "$current_disk" == "$SNAPSHOT_DIR"* ]]; then
+    print "[$domain] Using snapshot: $(basename "$current_disk" | sed "s/${vm}-//" | sed 's/\.qcow2$//')"
+  elif [[ -n "$current_disk" ]]; then
+    print "[$domain] Using base disk"
+  fi
+}
+
+if [[ $# -lt 2 ]]; then
+  usage
+fi
+
+VM="$1"
+CMD="${2:-}"
+shift 2 || true
+
+case "$VM" in
+  dev|dbg) ;;
+  *) usage ;;
+esac
+
+case "$CMD" in
+  create) cmd_create "$VM" "${1:-}" ;;
+  list)   cmd_list "$VM" ;;
+  delete) cmd_delete "$VM" "${1:-}" ;;
+  revert) cmd_revert "$VM" "${1:-}" ;;
+  status) cmd_status "$VM" ;;
+  *)      usage ;;
 esac
