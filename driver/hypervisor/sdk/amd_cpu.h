@@ -1,6 +1,19 @@
 #pragma once
 #include <cstdint>
 
+struct Cpu
+{
+  enum Register
+  {
+    Eax,
+    Ebx,
+    Ecx,
+    Edx
+  };
+
+  int Info[4];
+};
+
 constexpr auto LARGEST_EXTENDED_FUNCTION = 0x80000000;
 constexpr auto EXTENDED_FEATURES = 0x80000001;
 constexpr auto SVM_FEATURES = 0x8000000A;

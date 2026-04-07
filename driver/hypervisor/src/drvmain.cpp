@@ -4,18 +4,10 @@
 
 #include <intrin.h>
 
-struct Cpu
+void DriverUnload(PDRIVER_OBJECT DriverObject)
 {
-  enum Register
-  {
-    Eax,
-    Ebx,
-    Ecx,
-    Edx
-  };
-
-  int Info[4];
-};
+  Log("[-] Hypervisor unloading...");
+}
 
 /*
  * 1) Enable SVM: Set Bit 12 of MSR_EFER on all CPU cores.
@@ -25,11 +17,15 @@ struct Cpu
  * 5) Write the Assembly Stub: Write a .asm file that saves your general-purpose registers and calls vmrun.
  * 6) Launch: Execute your assembly stub and watch the magic happen.
  */
-NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, [[maybe_unused]] PUNICODE_STRING ObjectPath)
+NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING ObjectPath)
 {
+  __debugbreak();
+
+  Log("[+] Driver loaded successfully");
+  DriverObject->DriverUnload = DriverUnload;
+
   Cpu cpu;
   __cpuid(cpu.Info, LARGEST_EXTENDED_FUNCTION);
-
   const auto maxExtendedLeaf = cpu.Info[Cpu::Register::Ecx];
   if (maxExtendedLeaf < EXTENDED_FEATURES)
   {
@@ -41,7 +37,6 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, [[maybe_unused]] PUNICODE_STRI
   __cpuid(cpu.Info, EXTENDED_FEATURES);
   CPUID_80000001_ECX extendedFeatures = { 0 };
   extendedFeatures.UInt32 = cpu.Info[Cpu::Register::Ecx];
-
   if (!extendedFeatures.Bits.Svm)
   {
     Log("[-] SVM is not supported");
@@ -51,7 +46,6 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, [[maybe_unused]] PUNICODE_STRI
   // I dont get why are we reading MSR here
   VM_CR_MSR vmCr = { 0 };
   vmCr.UInt64 = __readmsr(MSR_VM_CR);
-
   if (vmCr.Bits.SvmDisable)
   {
     Log("[-] SVM is disabled");
@@ -66,7 +60,6 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, [[maybe_unused]] PUNICODE_STRI
   __cpuid(cpu.Info, SVM_FEATURES);
   CPUID_8000000A_EDX svmFeatures = { 0 };
   svmFeatures.UInt32 = cpu.Info[Cpu::Register::Ecx];
-
   if (!svmFeatures.Bits.Npt)
   {
     Log("[-] Nested Paging is not supported");

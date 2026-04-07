@@ -71,17 +71,19 @@
   <PropertyGroup />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
-    <OutDir>$(ProjectDir)\build\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)\build\$(Configuration)\intermediates\</IntDir>
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\$(Configuration)\intermediates\</IntDir>
     <EnableInf2cat>false</EnableInf2cat>
     <DriverCatalog_Enable>false</DriverCatalog_Enable>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
-    <OutDir>$(ProjectDir)\build\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)\build\$(Configuration)\intermediates\</IntDir>
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\$(Configuration)\intermediates\</IntDir>
     <EnableInf2cat>false</EnableInf2cat>
     <DriverCatalog_Enable>false</DriverCatalog_Enable>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
@@ -117,7 +119,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <ConformanceMode>true</ConformanceMode>
-      <TreatWarningAsError>false</TreatWarningAsError>
+      <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
       <EntryPointSymbol>DriverEntry</EntryPointSymbol>
